@@ -101,8 +101,44 @@ MonoBehaviour:
   maxHealth: 10
   currentHealth: 0
   baseSpeed: 100
-  maxSpeed: 300
+  maxSpeed: 150
   movementType: 0
+  newMovementsStartClockwise: 1
+  randomFreezeMinInterval: 1.5
+  randomFreezeMaxInterval: 3
+  randomFreezeMinDuration: 0.05
+  randomFreezeMaxDuration: 0.15
+  stopAndGoMoveDuration: 1.5
+  stopAndGoStopDuration: 0.4
+  timedReverseInterval: 2
+  slowReverseMoveDuration: 2
+  slowReverseSlowDownDuration: 0.5
+  slowReverseSpeedUpDuration: 0.5
+  hitReverseEveryHits: 1
+  speedPulseMinMultiplier: 0.5
+  speedPulseMaxMultiplier: 1.5
+  speedPulseHalfCycleDuration: 1
+  burstRotationNormalDuration: 1.5
+  burstRotationDuration: 0.4
+  burstRotationSpeedMultiplier: 2
+  randomSegmentMinMultiplier: 0.5
+  randomSegmentMaxMultiplier: 1.75
+  randomSegmentMinDuration: 0.75
+  randomSegmentMaxDuration: 1.75
+  stutterMoveDuration: 0.25
+  stutterPauseDuration: 0.08
+  stepRotationDegrees: 20
+  stepRotationInterval: 0.25
+  wobbleSpeedAmount: 0.25
+  wobbleFrequency: 2
+  fakeStopMoveDuration: 1.5
+  fakeStopSlowDownDuration: 0.45
+  fakeStopHoldDuration: 0.2
+  fakeStopSpeedUpDuration: 0.35
+  fakeStopMinimumSpeedMultiplier: 0.05
+  fakeStopReverseAfterPause: 0
+  horizontalDriftDistance: 1
+  horizontalDriftHalfCycleDuration: 1.25
 --- !u!58 &242734204398791251
 CircleCollider2D:
   m_ObjectHideFlags: 0

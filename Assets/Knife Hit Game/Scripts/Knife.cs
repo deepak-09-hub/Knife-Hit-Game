@@ -35,7 +35,7 @@ public class Knife : MonoBehaviour {
 
         if (collider.gameObject.CompareTag(Tags.Trunk.ToString()))
         {
-            canHit  = false;
+            canHit = false;
             transform.parent = collider.transform;
             TrunkController.instance.Damage(1);
             GameController.instance.SetScore(1);
@@ -44,13 +44,25 @@ public class Knife : MonoBehaviour {
         }
         else if (collider.gameObject.CompareTag(Tags.Knife.ToString()))
         {
-            canHit = false;
-            GameController.instance.ResetScore();
-            scriptEnabled = false;
-            knifeRigid.bodyType = RigidbodyType2D.Dynamic;
-            knifeRigid.velocity = Vector2.zero;
-            knifeRigid.AddForce(Vector2.down * 500f, ForceMode2D.Impulse);
-            GameController.instance.ShowRestartScreen();
+            if (GameController.instance.lives > 0)
+            {
+                GameController.instance.lives--;
+            }
+            else
+            {
+                Die();
+            }
         }
+    }
+
+    private void Die()
+    {
+        canHit = false;
+        GameController.instance.ResetScore();
+        scriptEnabled = false;
+        knifeRigid.bodyType = RigidbodyType2D.Dynamic;
+        knifeRigid.velocity = Vector2.zero;
+        knifeRigid.AddForce(Vector2.down * 500f, ForceMode2D.Impulse);
+        GameController.instance.ShowRestartScreen();
     }
 }

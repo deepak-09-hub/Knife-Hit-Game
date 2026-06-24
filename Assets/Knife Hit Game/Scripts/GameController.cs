@@ -12,6 +12,7 @@ public class GameController : MonoBehaviour
     public GameObject gameOver;
     public TMP_Text scoreText;
     public TMP_Text healthText;
+    public int lives = 3; // can be used for power-ups or health system
     //public TMP_Text appleCount;
 
     public static GameController instance;
