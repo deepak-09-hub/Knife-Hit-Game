@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Knife
   - Trunk
+  - Apple
   layers:
   - Default
   - TransparentFX

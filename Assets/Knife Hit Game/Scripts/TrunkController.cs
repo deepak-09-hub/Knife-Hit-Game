@@ -1,13 +1,10 @@
-﻿using UnityEngine;
-using TMPro;
+using UnityEngine;
 
-public class TrunkController : MonoBehaviour 
+public class TrunkController : MonoBehaviour
 {
     public int health = 5;
-
     public Trunk[] trunkPrefabs;
     public Trunk currentTrunk;
-
 
     public static TrunkController instance;
 
@@ -25,31 +22,58 @@ public class TrunkController : MonoBehaviour
 
     public void spwanTrunk()
     {
+        if (trunkPrefabs == null || trunkPrefabs.Length == 0)
+        {
+            Debug.LogError("TrunkController needs at least one Trunk prefab.");
+            return;
+        }
+
         if (currentTrunk != null)
         {
             Destroy(currentTrunk.gameObject);
         }
-        Trunk trunk = Instantiate(trunkPrefabs[Random.Range(0, trunkPrefabs.Length - 1)], transform.position, transform.rotation, this.transform);
-        currentTrunk = trunk;
-        health = currentTrunk.maxHealth;
-        GameController.instance.updateHealthText(health);
+
+        int prefabIndex = Random.Range(0, trunkPrefabs.Length);
+        currentTrunk = Instantiate(trunkPrefabs[prefabIndex], transform.position, transform.rotation, transform);
+        currentTrunk.Initialize();
+
+        if (GameController.instance != null &&
+            GameController.instance.ActivePowerUp == GameController.PowerUpType.ControlTrunkMovement)
+        {
+            currentTrunk.SetManualControl(true);
+        }
+
+        SyncHealthFromCurrentTrunk();
     }
 
-    // Decrease health
     public void Damage(int value)
     {
-        if (currentTrunk == null)
+        if (currentTrunk == null || health <= 0)
+        {
             return;
+        }
 
-        currentTrunk.TakeDamage(value);
-        health = currentTrunk.currentHealth;
-        GameController.instance.updateHealthText(health);
+        currentTrunk.TakeDamage(Mathf.Max(1, value));
+        SyncHealthFromCurrentTrunk();
 
         if (health <= 0)
         {
             SpawnController.instance.ClearKnives();
             spwanTrunk();
             SpawnController.instance.SpawnOnject();
+            GameController.instance.level += 1;
+            GameController.instance.UpdateLevelText();
         }
+    }
+
+    public void SyncHealthFromCurrentTrunk()
+    {
+        if (currentTrunk == null)
+        {
+            return;
+        }
+
+        health = currentTrunk.currentHealth;
+        GameController.instance.updateHealthText(health);
     }
 }

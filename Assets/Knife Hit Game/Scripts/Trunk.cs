@@ -89,6 +89,8 @@ public class Trunk : MonoBehaviour
 
     private bool isFrozen;
     private bool movingClockwise = true;
+    private bool isInitialized;
+    private bool manualControlActive;
 
     private Vector3 startingLocalPosition;
 
@@ -116,11 +118,21 @@ public class Trunk : MonoBehaviour
 
     private void Start()
     {
+        Initialize();
+    }
+
+    public void Initialize()
+    {
+        if (isInitialized)
+        {
+            return;
+        }
+
+        isInitialized = true;
         currentHealth = maxHealth;
         currentSpeed = baseSpeed;
         startingLocalPosition = transform.localPosition;
 
-        // Original anti-clockwise modes retain their original setup.
         direction = (movementType == MovementType.AntiClockwise ||
                      movementType == MovementType.SpeedUpAntiClockwise)
             ? -1
@@ -131,6 +143,11 @@ public class Trunk : MonoBehaviour
 
     private void Update()
     {
+        if (manualControlActive)
+        {
+            return;
+        }
+
         movementElapsed += Time.deltaTime;
 
         if (movementType == MovementType.HorizontalDrift)
@@ -143,7 +160,6 @@ public class Trunk : MonoBehaviour
 
         switch (movementType)
         {
-            // Existing movements: behavior is unchanged.
             case MovementType.Clockwise:
                 Rotate(1);
                 break;
@@ -191,7 +207,6 @@ public class Trunk : MonoBehaviour
                 break;
 
             case MovementType.StepRotation:
-                // Rotation is performed by StepRotationRoutine in fixed angle jumps.
                 break;
         }
     }
@@ -199,6 +214,37 @@ public class Trunk : MonoBehaviour
     private void Rotate(int dir, float multiplier = 1f)
     {
         transform.Rotate(0f, 0f, currentSpeed * multiplier * dir * Time.deltaTime);
+    }
+
+    public void SetManualControl(bool enabled)
+    {
+        manualControlActive = enabled;
+    }
+
+    public void RotateManually(float degrees)
+    {
+        if (!manualControlActive)
+        {
+            return;
+        }
+
+        transform.Rotate(0f, 0f, degrees);
+    }
+
+    public void HalveRemainingHealth()
+    {
+        if (!isInitialized)
+        {
+            Initialize();
+        }
+
+        if (currentHealth <= 0)
+        {
+            return;
+        }
+
+        currentHealth = Mathf.Max(1, Mathf.CeilToInt(currentHealth / 2f));
+        HandleDamageBasedMovement();
     }
 
     public void TakeDamage(int damage)
@@ -211,9 +257,7 @@ public class Trunk : MonoBehaviour
             return;
         }
 
-        // Preserves the original behavior: currentSpeed still interpolates from
-        // baseSpeed to maxSpeed after a successful hit.
-        // StepRotation deliberately uses fixed angle jumps instead of continuous speed.
+
         HandleDamageBasedMovement();
 
         if (movementType == MovementType.HitReverse && damage > 0)

@@ -2,15 +2,29 @@ using UnityEngine;
 
 public class PowerUps : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+    [SerializeField] private GameController.PowerUpType powerUpType;
 
-    // Update is called once per frame
-    void Update()
+    [Tooltip("Used only when Power Up Type is Multiplier.")]
+    [Min(1)]
+    [SerializeField] private int multiplierValue = 2;
+
+    private bool collected;
+
+    public bool Collect()
     {
-        
+        if (collected)
+        {
+            return false;
+        }
+
+        bool activated = GameController.instance.TryActivatePowerUp(powerUpType, multiplierValue);
+        if (!activated)
+        {
+            return false;
+        }
+
+        collected = true;
+        Destroy(gameObject);
+        return true;
     }
 }

@@ -3,5 +3,6 @@ public enum Tags
     Player,
     MainCamera,
     Trunk,
-    Knife
+    Knife,
+    Apple
 }
