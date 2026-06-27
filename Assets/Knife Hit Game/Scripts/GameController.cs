@@ -164,6 +164,7 @@ public class GameController : MonoBehaviour
 
         SpawnController.instance.ClearKnives();
         TrunkController.instance.spwanTrunk();
+        SpawnController.instance.PickRandomknife();
         SpawnController.instance.SpawnOnject();
     }
 

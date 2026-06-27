@@ -3349,7 +3349,7 @@ MonoBehaviour:
   levelText: {fileID: 763019472}
   appleCountObject: {fileID: 2032863089}
   appleCountText: {fileID: 1396986723}
-  assignedPowerUp: 0
+  assignedPowerUp: 1
   multiplierValue: 50
   controlTrunkDuration: 6
   manualRotationDegreesPerButtonPress: 15

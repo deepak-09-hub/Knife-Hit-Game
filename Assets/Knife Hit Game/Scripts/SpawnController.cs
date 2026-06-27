@@ -2,6 +2,7 @@
 
 public class SpawnController : MonoBehaviour
 {
+    public Knife[] knifePrefabs;
     public Knife knifePrefab;
     public Knife currentKnife;
 
@@ -24,10 +25,8 @@ public class SpawnController : MonoBehaviour
         bool throwPressed = false;
 
 #if UNITY_EDITOR || UNITY_STANDALONE
-        // Mouse click in Unity Editor / PC build.
         throwPressed = Input.GetKeyDown(KeyCode.Space);
 #else
-    // One screen tap on Android / iPhone.
     throwPressed = Input.touchCount > 0 &&
                    Input.GetTouch(0).phase == TouchPhase.Began;
 #endif
@@ -38,6 +37,11 @@ public class SpawnController : MonoBehaviour
         {
             ThrowObject();
         }
+    }
+
+    private void Start()
+    {
+        PickRandomknife();
     }
 
 
@@ -60,12 +64,7 @@ public class SpawnController : MonoBehaviour
             return;
         }
 
-        Knife newKnife = Instantiate(
-            knifePrefab,
-            transform.position,
-            transform.rotation,
-            transform
-        );
+        Knife newKnife = Instantiate(knifePrefab, transform.position, transform.rotation, transform);
 
         newKnife.scriptEnabled = false;
         newKnife.throow = false;
@@ -106,5 +105,10 @@ public class SpawnController : MonoBehaviour
         }
 
         currentKnife = null;
+    }
+
+    public void PickRandomknife()
+    {
+        knifePrefab = knifePrefabs[Random.Range(0, knifePrefabs.Length)];
     }
 }
