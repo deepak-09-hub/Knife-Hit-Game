@@ -1,8 +1,7 @@
 ﻿using UnityEngine;
 
-
-public class SpawnController : MonoBehaviour {
-
+public class SpawnController : MonoBehaviour
+{
     public Knife knifePrefab;
     public Knife currentKnife;
 
@@ -22,43 +21,90 @@ public class SpawnController : MonoBehaviour {
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
+        bool throwPressed = false;
+
+#if UNITY_EDITOR || UNITY_STANDALONE
+        // Mouse click in Unity Editor / PC build.
+        throwPressed = Input.GetKeyDown(KeyCode.Space);
+#else
+    // One screen tap on Android / iPhone.
+    throwPressed = Input.touchCount > 0 &&
+                   Input.GetTouch(0).phase == TouchPhase.Began;
+#endif
+
+        if (throwPressed &&
+            currentKnife != null &&
+            currentKnife.canHit)
         {
-            if (currentKnife.canHit)
-            {
-                ThrowObject();
-            }
+            ThrowObject();
         }
     }
 
+
     public void SpawnOnject()
     {
-        if (currentKnife == null && TrunkController.instance.health > 0)
+        if (currentKnife != null)
         {
-            Knife newKnife = Instantiate(knifePrefab, transform.position, transform.rotation, this.transform);
-            currentKnife = newKnife;
-            currentKnife.throow = false;
-            currentKnife.canHit = true;
+            return;
         }
+
+        if (knifePrefab == null)
+        {
+            Debug.LogError("Knife Prefab is not assigned in SpawnController.");
+            return;
+        }
+
+        if (TrunkController.instance == null ||
+            TrunkController.instance.health <= 0)
+        {
+            return;
+        }
+
+        Knife newKnife = Instantiate(
+            knifePrefab,
+            transform.position,
+            transform.rotation,
+            transform
+        );
+
+        newKnife.scriptEnabled = false;
+        newKnife.throow = false;
+        newKnife.canHit = true;
+
+        currentKnife = newKnife;
     }
 
     public void ThrowObject()
     {
-        if (currentKnife != null)
+        if (currentKnife == null || !currentKnife.canHit)
         {
-            currentKnife.canHit = false;
-            currentKnife.throow = true;
-            currentKnife.speed = currentKnife.currentSpeed;
-            currentKnife = null;
+            return;
         }
+
+        Knife knifeToThrow = currentKnife;
+
+        // Clear this immediately because the knife is no longer waiting at spawn.
+        currentKnife = null;
+
+        knifeToThrow.scriptEnabled = true;
+        knifeToThrow.canHit = false;
+        knifeToThrow.throow = true;
+        knifeToThrow.speed = knifeToThrow.currentSpeed;
     }
 
-    public void ClearKnives()
+    // knifeToKeep is the knife currently falling after a failed hit.
+    public void ClearKnives(Knife knifeToKeep = null)
     {
-        if (currentKnife != null)
+        Knife[] allKnives = FindObjectsOfType<Knife>();
+
+        foreach (Knife knife in allKnives)
         {
-            Destroy(currentKnife.gameObject);
-            currentKnife = null;
+            if (knife != null && knife != knifeToKeep)
+            {
+                Destroy(knife.gameObject);
+            }
         }
+
+        currentKnife = null;
     }
 }

@@ -1,30 +1,8 @@
 using UnityEngine;
 
+// Power-ups are configured and used from GameController in this version.
+// Do not attach this component to apples, trunks, knives, or scene objects.
+// You may delete this script if no GameObject currently uses it.
 public class PowerUps : MonoBehaviour
 {
-    [SerializeField] private GameController.PowerUpType powerUpType;
-
-    [Tooltip("Used only when Power Up Type is Multiplier.")]
-    [Min(1)]
-    [SerializeField] private int multiplierValue = 2;
-
-    private bool collected;
-
-    public bool Collect()
-    {
-        if (collected)
-        {
-            return false;
-        }
-
-        bool activated = GameController.instance.TryActivatePowerUp(powerUpType, multiplierValue);
-        if (!activated)
-        {
-            return false;
-        }
-
-        collected = true;
-        Destroy(gameObject);
-        return true;
-    }
 }

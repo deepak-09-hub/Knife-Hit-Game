@@ -58,11 +58,7 @@ public class TrunkController : MonoBehaviour
 
         if (health <= 0)
         {
-            SpawnController.instance.ClearKnives();
-            spwanTrunk();
-            SpawnController.instance.SpawnOnject();
-            GameController.instance.level += 1;
-            GameController.instance.UpdateLevelText();
+            GameController.instance.MoveToNextLevel();
         }
     }
 
@@ -74,6 +70,15 @@ public class TrunkController : MonoBehaviour
         }
 
         health = currentTrunk.currentHealth;
-        GameController.instance.updateHealthText(health);
+        GameController.instance.UpdateHitsLeftText(health);
+    }
+
+    public void DestroyCurrentTrunk()
+    {
+        if (currentTrunk != null)
+        {
+            Destroy(currentTrunk.gameObject);
+            currentTrunk = null;
+        }
     }
 }

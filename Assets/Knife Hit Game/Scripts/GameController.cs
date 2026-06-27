@@ -22,15 +22,30 @@ public class GameController : MonoBehaviour
     [Header("Game UI")]
     [SerializeField] private Button start;
     [SerializeField] private Button restart;
+    [SerializeField] private Button home;
+    [SerializeField] private Button knives;
+    [SerializeField] private Button powerUps;
     [SerializeField] private GameObject spawnPoint;
-    [SerializeField] private GameObject startScreen;
+    [SerializeField] private GameObject logo;
     [SerializeField] private GameObject gameOver;
+    [SerializeField] private GameObject levelUp;
+    [SerializeField] private GameObject scoreObject;
     [SerializeField] private TMP_Text scoreText;
-    [SerializeField] private TMP_Text healthText;
-    [SerializeField] private TMP_Text levelText;
+    [SerializeField] private GameObject hitsLeftObject;
+    [SerializeField] private TMP_Text hitsLeftText;
     [SerializeField] public int level = 1;
-    //[SerializeField] private TMP_Text appleCountText;
-    //[SerializeField] private TMP_Text powerUpText;
+    [SerializeField] private GameObject levelObject;
+    [SerializeField] private TMP_Text levelText;
+    [SerializeField] private GameObject appleCountObject;
+    [SerializeField] private TMP_Text appleCountText;
+
+    [Header("Assigned Power Up")]
+    [Tooltip("Choose the ONE power-up the player receives for this run. The player cannot choose its type.")]
+    [SerializeField] private PowerUpType assignedPowerUp = PowerUpType.None;
+
+    [Tooltip("Only used when Assigned Power Up is Multiplier.")]
+    [Min(1)]
+    [SerializeField] private int multiplierValue = 2;
 
     [Header("Control Trunk Movement")]
     [SerializeField] private float controlTrunkDuration = 6f;
@@ -38,18 +53,18 @@ public class GameController : MonoBehaviour
 
     private int score;
     private int totalApples;
-    private int applesCollectedThisRun;
     private int appleMultiplier = 1;
     private bool runIsActive;
-    private bool runRewardBanked;
     private Coroutine controlTrunkCoroutine;
 
     public static GameController instance;
 
-    public GameObject SpawnPoint => spawnPoint;
+    // This is the power-up currently waiting for its special event.
+    // Example: Super Strike waits for the next trunk hit.
     public PowerUpType ActivePowerUp { get; private set; } = PowerUpType.None;
+
+    public GameObject SpawnPoint => spawnPoint;
     public int TotalApples => totalApples;
-    public int ApplesCollectedThisRun => applesCollectedThisRun;
     public int AppleMultiplier => appleMultiplier;
 
     private void Awake()
@@ -69,6 +84,7 @@ public class GameController : MonoBehaviour
     {
         start.onClick.AddListener(Play);
         restart.onClick.AddListener(Restart);
+        home.onClick.AddListener(Home);
 
         UpdateScoreText();
         UpdateAppleText();
@@ -93,27 +109,53 @@ public class GameController : MonoBehaviour
 
     public void Play()
     {
-        startScreen.SetActive(false);
+        logo.SetActive(false);
         start.gameObject.SetActive(false);
+        //knives.gameObject.SetActive(false);
+        //powerUps.gameObject.SetActive(false);
+        scoreObject.SetActive(true);
+        levelObject.SetActive(true);
+        hitsLeftObject.SetActive(true);
+        appleCountObject.SetActive(false);
         StartNewRun();
     }
 
     private void Restart()
     {
-        startScreen.SetActive(false);
         gameOver.SetActive(false);
         restart.gameObject.SetActive(false);
+        home.gameObject.SetActive(false);
+        scoreObject.SetActive(true);
+        levelObject.SetActive(true);
+        hitsLeftObject.SetActive(true);
+        appleCountObject.SetActive(false);
         StartNewRun();
+    }
+
+    private void Home()
+    {
+        logo.SetActive(true);
+        gameOver.SetActive(false);
+        restart.gameObject.SetActive(false);
+        start.gameObject.SetActive(true);
+        home.gameObject.SetActive(false);
+        //knives.gameObject.SetActive(true);
+        //powerUps.gameObject.SetActive(true);
+        scoreObject.SetActive(false);
+        levelObject.SetActive(false);
+        hitsLeftObject.SetActive(false);
+        appleCountObject.SetActive(true);
     }
 
     private void StartNewRun()
     {
         StopManualTrunkControl();
         ActivePowerUp = PowerUpType.None;
-        applesCollectedThisRun = 0;
+
         appleMultiplier = 1;
+        ActivateAssignedPowerUp();
+
         level = 1;
-        runRewardBanked = false;
         runIsActive = true;
 
         ResetScore();
@@ -127,33 +169,53 @@ public class GameController : MonoBehaviour
 
     public void ShowRestartScreen()
     {
-        startScreen.SetActive(true);
+        EndCurrentRun();
+
         gameOver.SetActive(true);
         restart.gameObject.SetActive(true);
+        home.gameObject.SetActive(true);
+        scoreObject.SetActive(false);
+        levelObject.SetActive(false);
+        hitsLeftObject.SetActive(false);
+        appleCountObject.SetActive(true);
     }
 
-    public void updateHealthText(int health)
+    private void EndCurrentRun()
     {
-        if (healthText != null)
+        runIsActive = false;
+        ClearActivePowerUp();
+    }
+
+    public void UpdateHitsLeftText(int hitsLeft)
+    {
+        if (hitsLeftText != null)
         {
-            healthText.text = "Health: " + health;
+            hitsLeftText.text = hitsLeft.ToString();
         }
     }
 
+    // Apples are permanent currency. They are saved immediately on collection.
     public void CollectApple(int amount = 1)
     {
-        if (!runIsActive)
-        {
-            return;
-        }
+        int applesToAdd = Mathf.Max(1, amount) * appleMultiplier;
+        totalApples += applesToAdd;
 
-        applesCollectedThisRun += Mathf.Max(1, amount);
+        PlayerPrefs.SetInt(TotalApplesKey, totalApples);
+        PlayerPrefs.Save();
+
         UpdateAppleText();
     }
 
     public void CollectAllRemainingApples()
     {
-        Apple[] apples = FindObjectsOfType<Apple>();
+        Trunk currentTrunk = TrunkController.instance.currentTrunk;
+
+        if (currentTrunk == null)
+        {
+            return;
+        }
+
+        Apple[] apples = currentTrunk.GetComponentsInChildren<Apple>(true);
 
         foreach (Apple apple in apples)
         {
@@ -161,71 +223,51 @@ public class GameController : MonoBehaviour
         }
     }
 
-    // Call this once when the player loses. It does not reset the saved wallet.
-    public void FinalizeRun()
+
+    private void ActivateAssignedPowerUp()
     {
-        if (!runIsActive || runRewardBanked)
+        ActivePowerUp = assignedPowerUp;
+
+        switch (assignedPowerUp)
         {
-            return;
-        }
+            case PowerUpType.Multiplier:
+                appleMultiplier = Mathf.Max(1, multiplierValue);
+                break;
 
-        int finalAppleReward = applesCollectedThisRun * appleMultiplier;
-        totalApples += finalAppleReward;
-        PlayerPrefs.SetInt(TotalApplesKey, totalApples);
-        PlayerPrefs.Save();
-
-        runRewardBanked = true;
-        runIsActive = false;
-        UpdateAppleText();
-    }
-
-    public bool TryActivatePowerUp(PowerUpType powerUpType, int multiplierValue = 2)
-    {
-        if (powerUpType == PowerUpType.None || ActivePowerUp != PowerUpType.None)
-        {
-            return false;
-        }
-
-        if (powerUpType == PowerUpType.VariableKnives)
-        {
-            //will use it later. 
-            return false;
-        }
-
-        ActivePowerUp = powerUpType;
-
-        switch (powerUpType)
-        {
             case PowerUpType.RewardAllApples:
-                CollectAllRemainingApples();
-                ClearActivePowerUp();
+                StartCoroutine(ApplyPowerUpAfterTrunkSpawns());
                 break;
 
             case PowerUpType.HalfHits:
-                if (!ApplyHalfHits())
-                {
-                    ClearActivePowerUp();
-                    return false;
-                }
-
-                ClearActivePowerUp();
+                StartCoroutine(ApplyPowerUpAfterTrunkSpawns());
                 break;
 
             case PowerUpType.ControlTrunkMovement:
-                if (!StartManualTrunkControl())
-                {
-                    ClearActivePowerUp();
-                    return false;
-                }
-                break;
-
-            case PowerUpType.Multiplier:
-                appleMultiplier *= Mathf.Max(1, multiplierValue);
-                ClearActivePowerUp();
+                StartCoroutine(ApplyPowerUpAfterTrunkSpawns());
                 break;
         }
+    }
 
-        return true;
+    private IEnumerator ApplyPowerUpAfterTrunkSpawns()
+    {
+        yield return null;
+
+        switch (ActivePowerUp)
+        {
+            case PowerUpType.RewardAllApples:
+                CollectAllRemainingApples();
+                ActivePowerUp = PowerUpType.None;
+                break;
+
+            case PowerUpType.HalfHits:
+                ApplyHalfHits();
+                ActivePowerUp = PowerUpType.None;
+                break;
+
+            case PowerUpType.ControlTrunkMovement:
+                StartManualTrunkControl();
+                break;
+        }
     }
 
     // Super Strike is consumed by the next successful trunk hit.
@@ -241,7 +283,7 @@ public class GameController : MonoBehaviour
         return damage;
     }
 
-    // Second Chance is consumed only when the knife collides with another knife.
+    // Second Chance is consumed only when the knife touches another knife.
     public bool TryUseSecondChance()
     {
         if (ActivePowerUp != PowerUpType.SecondChance)
@@ -253,12 +295,13 @@ public class GameController : MonoBehaviour
         return true;
     }
 
-    // Left and Right Button
+    // Bind your Left UI Button here.
     public void RotateTrunkLeft()
     {
         RotateTrunkManually(-manualRotationDegreesPerButtonPress);
     }
 
+    // Bind your Right UI Button here.
     public void RotateTrunkRight()
     {
         RotateTrunkManually(manualRotationDegreesPerButtonPress);
@@ -297,7 +340,14 @@ public class GameController : MonoBehaviour
             return false;
         }
 
+        ActivePowerUp = PowerUpType.ControlTrunkMovement;
         trunk.SetManualControl(true);
+
+        if (controlTrunkCoroutine != null)
+        {
+            StopCoroutine(controlTrunkCoroutine);
+        }
+
         controlTrunkCoroutine = StartCoroutine(ManualTrunkControlTimer());
         return true;
     }
@@ -336,24 +386,46 @@ public class GameController : MonoBehaviour
     {
         if (scoreText != null)
         {
-            scoreText.text = "Score: " + score;
+            scoreText.text = score.ToString();
         }
     }
 
     private void UpdateAppleText()
     {
-        //if (appleCountText != null)
-        //{
-        //    int visibleAppleCount = totalApples + applesCollectedThisRun;
-        //    appleCountText.text = "Apples: " + visibleAppleCount;
-        //}
+        if (appleCountText != null)
+        {
+            appleCountText.text = totalApples.ToString();
+        }
     }
 
     public void UpdateLevelText()
     {
         if (levelText != null)
         {
-            levelText.text = "Level: " + level;
+            levelText.text = level.ToString();
         }
+    }
+
+    public void MoveToNextLevel()
+    {
+        StartCoroutine(NextLevel());
+    }
+
+    private IEnumerator NextLevel()
+    {
+        TrunkController.instance.DestroyCurrentTrunk();
+        levelUp.SetActive(true);
+        yield return new WaitForSeconds(1f);
+        levelUp.SetActive(false);
+
+        ClearActivePowerUp();
+        appleMultiplier = 1;
+
+        SpawnController.instance.ClearKnives();
+        TrunkController.instance.spwanTrunk();
+        SpawnController.instance.SpawnOnject();
+
+        level += 1;
+        UpdateLevelText();
     }
 }
