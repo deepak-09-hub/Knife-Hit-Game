@@ -399,7 +399,7 @@ GameObject:
   - component: {fileID: 1712361590348363458}
   - component: {fileID: 242734204398791251}
   m_Layer: 0
-  m_Name: Trunk5
+  m_Name: BossTrunk1
   m_TagString: Trunk
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -4,7 +4,9 @@ public class TrunkController : MonoBehaviour
 {
     public int health = 5;
     public Trunk[] trunkPrefabs;
+    public Trunk[] bossTrunkPrefabs;
     public Trunk currentTrunk;
+    public int currentTrunkIndex = 0;
 
     public static TrunkController instance;
 
@@ -24,7 +26,13 @@ public class TrunkController : MonoBehaviour
     {
         if (trunkPrefabs == null || trunkPrefabs.Length == 0)
         {
-            Debug.LogError("TrunkController needs at least one Trunk prefab.");
+            Debug.LogError("TrunkController needs at least one normal Trunk prefab.");
+            return;
+        }
+
+        if (bossTrunkPrefabs == null || bossTrunkPrefabs.Length == 0)
+        {
+            Debug.LogError("TrunkController needs at least one boss Trunk prefab.");
             return;
         }
 
@@ -33,12 +41,24 @@ public class TrunkController : MonoBehaviour
             Destroy(currentTrunk.gameObject);
         }
 
-        int prefabIndex = Random.Range(0, trunkPrefabs.Length);
-        currentTrunk = Instantiate(trunkPrefabs[prefabIndex], transform.position, transform.rotation, transform);
+        bool isBossLevel = GameController.instance != null && GameController.instance.level > 0 && GameController.instance.level % 4 == 0;
+
+        if (isBossLevel)
+        {
+            int bossIndex = Random.Range(0, bossTrunkPrefabs.Length);
+
+            currentTrunk = Instantiate(bossTrunkPrefabs[bossIndex], transform.position, transform.rotation, transform);
+        }
+        else
+        {
+            int prefabIndex = currentTrunkIndex % trunkPrefabs.Length;
+            currentTrunk = Instantiate(trunkPrefabs[prefabIndex], transform.position, transform.rotation, transform);
+            currentTrunkIndex = (currentTrunkIndex + 1) % trunkPrefabs.Length;
+        }
+
         currentTrunk.Initialize();
 
-        if (GameController.instance != null &&
-            GameController.instance.ActivePowerUp == GameController.PowerUpType.ControlTrunkMovement)
+        if (GameController.instance != null && GameController.instance.ActivePowerUp == GameController.PowerUpType.ControlTrunkMovement)
         {
             currentTrunk.SetManualControl(true);
         }

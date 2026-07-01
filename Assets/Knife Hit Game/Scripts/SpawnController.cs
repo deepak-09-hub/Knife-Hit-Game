@@ -2,7 +2,6 @@
 
 public class SpawnController : MonoBehaviour
 {
-    public Knife[] knifePrefabs;
     public Knife knifePrefab;
     public Knife currentKnife;
 
@@ -39,10 +38,6 @@ public class SpawnController : MonoBehaviour
         }
     }
 
-    private void Start()
-    {
-        PickRandomknife();
-    }
 
 
     public void SpawnOnject()
@@ -107,8 +102,15 @@ public class SpawnController : MonoBehaviour
         currentKnife = null;
     }
 
-    public void PickRandomknife()
+    public void SetKnifePrefab(Knife selectedKnifePrefab)
     {
-        knifePrefab = knifePrefabs[Random.Range(0, knifePrefabs.Length)];
+        if (selectedKnifePrefab == null)
+        {
+            Debug.LogError("Cannot set a null knife prefab.");
+            return;
+        }
+
+        knifePrefab = selectedKnifePrefab;
     }
+
 }

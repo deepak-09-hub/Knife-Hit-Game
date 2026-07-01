@@ -43,6 +43,7 @@ public class GameController : MonoBehaviour
     [Tooltip("Choose the ONE power-up the player receives for this run. The player cannot choose its type.")]
     [SerializeField] private PowerUpType assignedPowerUp = PowerUpType.None;
 
+
     [Tooltip("Only used when Assigned Power Up is Multiplier.")]
     [Min(1)]
     [SerializeField] private int multiplierValue = 2;
@@ -78,6 +79,7 @@ public class GameController : MonoBehaviour
         {
             Destroy(gameObject);
         }
+        Application.targetFrameRate = 120;
     }
 
     private void Start()
@@ -85,6 +87,8 @@ public class GameController : MonoBehaviour
         start.onClick.AddListener(Play);
         restart.onClick.AddListener(Restart);
         home.onClick.AddListener(Home);
+        powerUps.onClick.AddListener(PowerUps);
+        knives.onClick.AddListener(Knives);
 
         UpdateScoreText();
         UpdateAppleText();
@@ -111,8 +115,8 @@ public class GameController : MonoBehaviour
     {
         logo.SetActive(false);
         start.gameObject.SetActive(false);
-        //knives.gameObject.SetActive(false);
-        //powerUps.gameObject.SetActive(false);
+        knives.gameObject.SetActive(false);
+        powerUps.gameObject.SetActive(false);
         scoreObject.SetActive(true);
         levelObject.SetActive(true);
         hitsLeftObject.SetActive(true);
@@ -139,12 +143,22 @@ public class GameController : MonoBehaviour
         restart.gameObject.SetActive(false);
         start.gameObject.SetActive(true);
         home.gameObject.SetActive(false);
-        //knives.gameObject.SetActive(true);
-        //powerUps.gameObject.SetActive(true);
+        knives.gameObject.SetActive(true);
+        powerUps.gameObject.SetActive(true);
         scoreObject.SetActive(false);
         levelObject.SetActive(false);
         hitsLeftObject.SetActive(false);
         appleCountObject.SetActive(true);
+    }
+
+    private void PowerUps()
+    {
+        PowerUpsMenuController.Instance.OpenPowerUpsMenu();
+    }
+
+    private void Knives()
+    {
+        KnifeMenuControllor.Instance.OpenKnifeMenu();
     }
 
     private void StartNewRun()
@@ -162,9 +176,9 @@ public class GameController : MonoBehaviour
         UpdateAppleText();
         UpdateLevelText();
 
+        TrunkController.instance.currentTrunkIndex = 0;
         SpawnController.instance.ClearKnives();
         TrunkController.instance.spwanTrunk();
-        SpawnController.instance.PickRandomknife();
         SpawnController.instance.SpawnOnject();
     }
 
@@ -205,6 +219,27 @@ public class GameController : MonoBehaviour
         PlayerPrefs.Save();
 
         UpdateAppleText();
+    }
+
+    public bool TrySpendApples(int amount)
+    {
+        if (amount <= 0)
+        {
+            return true;
+        }
+
+        if (totalApples < amount)
+        {
+            return false;
+        }
+
+        totalApples -= amount;
+
+        PlayerPrefs.SetInt(TotalApplesKey, totalApples);
+        PlayerPrefs.Save();
+
+        UpdateAppleText();
+        return true;
     }
 
     public void CollectAllRemainingApples()
@@ -414,7 +449,10 @@ public class GameController : MonoBehaviour
 
     private IEnumerator NextLevel()
     {
+        bool bossWasDefeated = level > 0 && level % 4 == 0;
+
         TrunkController.instance.DestroyCurrentTrunk();
+
         levelUp.SetActive(true);
         yield return new WaitForSeconds(1f);
         levelUp.SetActive(false);
@@ -422,11 +460,16 @@ public class GameController : MonoBehaviour
         ClearActivePowerUp();
         appleMultiplier = 1;
 
-        SpawnController.instance.ClearKnives();
-        TrunkController.instance.spwanTrunk();
-        SpawnController.instance.SpawnOnject();
+        if (bossWasDefeated)
+        {
+            PowerUpsMenuController.Instance.AwardRandomPowerUp();
+        }
 
         level += 1;
         UpdateLevelText();
+
+        SpawnController.instance.ClearKnives();
+        TrunkController.instance.spwanTrunk();
+        SpawnController.instance.SpawnOnject();
     }
 }
