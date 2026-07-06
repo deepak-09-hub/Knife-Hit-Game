@@ -5,7 +5,6 @@ using UnityEngine.UI;
 public class PurchaseableKnifeData : MonoBehaviour
 {
     [Header("Knife Data")]
-    [Tooltip("Must be unique. Example: starter_knife, gold_knife")]
     [SerializeField] private string knifeId;
 
     [SerializeField] private Image knifeimage;
@@ -15,12 +14,10 @@ public class PurchaseableKnifeData : MonoBehaviour
 
     [Header("UI")]
     [SerializeField] private Button selectknife;
-    [SerializeField] private Button buy;
     [SerializeField] private GameObject lockedImage;
     [SerializeField] private Image selectedImage;
 
     [Header("Starting Ownership")]
-    [Tooltip("Only enable this for your free starter knife.")]
     [SerializeField] private bool owned;
 
     private KnifeMenuControllor menuController;
@@ -39,16 +36,10 @@ public class PurchaseableKnifeData : MonoBehaviour
 
         CreateOwnershipSaveIfNeeded();
 
-        if (buy != null)
-        {
-            buy.onClick.RemoveListener(BuyKnife);
-            buy.onClick.AddListener(BuyKnife);
-        }
-
         if (selectknife != null)
         {
-            selectknife.onClick.RemoveListener(SelectKnife);
-            selectknife.onClick.AddListener(SelectKnife);
+            selectknife.onClick.RemoveListener(UseKnifeButton);
+            selectknife.onClick.AddListener(UseKnifeButton);
         }
 
         RefreshUI(menuController != null && menuController.IsKnifeSelected(this));
@@ -71,34 +62,45 @@ public class PurchaseableKnifeData : MonoBehaviour
     {
         bool isOwned = IsOwned();
 
-        // Price always gets assigned, but only shows while the knife is locked.
         if (amountText != null)
         {
             amountText.text = Price.ToString();
             amountText.gameObject.SetActive(!isOwned);
         }
 
-        // Locked knife: show Buy.
-        if (buy != null)
+        if (lockedImage != null)
         {
             lockedImage.SetActive(!isOwned);
-            buy.gameObject.SetActive(!isOwned);
-            buy.interactable = !isOwned;
         }
 
-        // Owned, unselected knife: show Select.
         if (selectknife != null)
         {
-            bool showSelectButton = isOwned && !isSelected;
+            bool showButton = !isSelected;
 
-            selectknife.gameObject.SetActive(showSelectButton);
-            selectknife.interactable = showSelectButton;
+            selectknife.gameObject.SetActive(showButton);
+            selectknife.interactable = showButton;
         }
 
-        // Only the currently selected knife shows this.
         if (selectedImage != null)
         {
             selectedImage.gameObject.SetActive(isOwned && isSelected);
+        }
+    }
+
+    private void UseKnifeButton()
+    {
+        if (menuController == null)
+        {
+            return;
+        }
+
+        if (IsOwned())
+        {
+            menuController.SelectKnife(this);
+        }
+        else
+        {
+            menuController.BuyKnife(this);
         }
     }
 
@@ -108,22 +110,6 @@ public class PurchaseableKnifeData : MonoBehaviour
         {
             PlayerPrefs.SetInt(OwnedKey, owned ? 1 : 0);
             PlayerPrefs.Save();
-        }
-    }
-
-    private void BuyKnife()
-    {
-        if (menuController != null)
-        {
-            menuController.BuyKnife(this);
-        }
-    }
-
-    private void SelectKnife()
-    {
-        if (menuController != null)
-        {
-            menuController.SelectKnife(this);
         }
     }
 }

@@ -15,13 +15,13 @@ public class PowerUpsMenuController : MonoBehaviour
 
     [SerializeField] private Button exit;
 
-    public bool halfHitsUnlocked = false;
-    public bool multiplierUnlocked = false;
-    public bool allApplesUnlocked = false;
-    public bool secondChanceUnlocked = false;
-    public bool controlTrunkUnlocked = false;
-    public bool variableKnivesUnlocked = false;
-    public bool superStrikeUnlocked = false;
+    [HideInInspector]public bool halfHitsUnlocked = false;
+    [HideInInspector]public bool multiplierUnlocked = false;
+    [HideInInspector]public bool allApplesUnlocked = false;
+    [HideInInspector]public bool secondChanceUnlocked = false;
+    [HideInInspector]public bool controlTrunkUnlocked = false;
+    [HideInInspector]public bool variableKnivesUnlocked = false;
+    [HideInInspector]public bool superStrikeUnlocked = false;
 
     public static PowerUpsMenuController Instance { get; private set; }
 
