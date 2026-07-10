@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,6 +9,9 @@ public class KnifeMenuControllor : MonoBehaviour
 
     [SerializeField] private GameObject knifeMenu;
     [SerializeField] private Button exit;
+    [SerializeField] private GameObject popupPraent;
+    [SerializeField] private GameObject failPopup;
+    [SerializeField] private GameObject purchasedPopup;
     [SerializeField] private List<PurchaseableKnifeData> purchaseableKnivesList;
 
     public static KnifeMenuControllor Instance { get; private set; }
@@ -47,10 +51,12 @@ public class KnifeMenuControllor : MonoBehaviour
 
     public void CloseKnifeMenu()
     {
+        SoundManager.Instance.PlaySFX("button");
         if (knifeMenu != null)
         {
             knifeMenu.SetActive(false);
         }
+        GameController.instance.Menu.SetActive(true);
     }
 
     public void BuyKnife(PurchaseableKnifeData knifeData)
@@ -68,11 +74,15 @@ public class KnifeMenuControllor : MonoBehaviour
 
         if (!GameController.instance.TrySpendApples(knifeData.Price))
         {
+            SoundManager.Instance.PlaySFX("notpurchased");
+            StartCoroutine(ShowPopup(1.5f, false));
             Debug.Log("Not enough apples to buy: " + knifeData.KnifeId);
             return;
         }
 
         knifeData.SetOwned();
+        StartCoroutine(ShowPopup(1.5f, true));
+        SoundManager.Instance.PlaySFX("purchased");
 
         // After purchase:
         // Buy false, amount false, selected image false, Select button true.
@@ -94,6 +104,7 @@ public class KnifeMenuControllor : MonoBehaviour
 
         // This overwrites the old selected knife.
         // Therefore only one knife can ever be selected.
+        SoundManager.Instance.PlaySFX("button");
         PlayerPrefs.SetString(SelectedKnifeKey, knifeData.KnifeId);
         PlayerPrefs.Save();
 
@@ -192,5 +203,26 @@ public class KnifeMenuControllor : MonoBehaviour
         }
 
         return null;
+    }
+
+    public IEnumerator ShowPopup(float duration, bool success)
+    {
+        if (popupPraent == null)
+        {
+            yield break;
+        }
+        popupPraent.SetActive(true);
+        if(success)
+        {
+            purchasedPopup.SetActive(true);
+        }
+        else
+        {
+            failPopup.SetActive(true);
+        }
+        yield return new WaitForSeconds(duration);
+        popupPraent.SetActive(false);
+        if(failPopup.activeSelf) failPopup.SetActive(false);
+        if(purchasedPopup.activeSelf) purchasedPopup.SetActive(false);
     }
 }

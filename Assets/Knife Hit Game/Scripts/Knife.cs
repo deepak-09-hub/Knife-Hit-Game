@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class Knife : MonoBehaviour
@@ -79,18 +80,30 @@ public class Knife : MonoBehaviour
             throow = false;
             scriptEnabled = false;
 
-            transform.SetParent(collider.transform);
+            //transform.SetParent(collider.transform);
 
+            SoundManager.Instance.PlaySFX(TrunkController.instance.currentTrunk.soundClipName);
             int damage = GameController.instance.GetDamageForTrunkHit();
             TrunkController.instance.Damage(damage);
+            TrunkController.instance.currentTrunk.SetLastHitPoint(collider.ClosestPoint(transform.position));
+            TrunkController.instance.currentTrunk.AddToExtraObjects(knifeRigid);
+            if (TrunkController.instance.currentTrunk.currentHealth <= 0)
+            {
+                throow = true;
+            }
+            else
+            {
+                transform.SetParent(collider.transform);
+                enabled = false;
+            }
             GameController.instance.SetScore(1);
 
-            enabled = false;
 
             if (SpawnController.instance != null)
             {
                 SpawnController.instance.SpawnOnject();
             }
+
 
             return;
         }
@@ -108,10 +121,12 @@ public class Knife : MonoBehaviour
 
             if (secondChance)
             {
+                SoundManager.Instance.PlaySFX("invalidhit");
                 RecoverFromKnifeCollision();
             }
             else
             {
+                SoundManager.Instance.PlaySFX("invalidhit");
                 Die();
             }
         }
@@ -133,7 +148,12 @@ public class Knife : MonoBehaviour
             SpawnController.instance.SpawnOnject();
         }
 
-        Destroy(gameObject);
+        if (knifeRigid != null)
+        {
+            ThrowKnife();
+        }
+
+        Destroy(gameObject, 2);
     }
 
     private void Die()
@@ -155,6 +175,38 @@ public class Knife : MonoBehaviour
             knifeCollider.enabled = false;
         }
 
+        if (knifeRigid != null)
+        {
+            ThrowKnife();
+        }
+
+        StartCoroutine(Failed());
+
+        // Lets the failed knife fall briefly, but it cannot collide anymore.
+        Destroy(gameObject, 2.5f);
+    }
+
+    private void OnDestroy()
+    {
+        if (SpawnController.instance != null &&
+            SpawnController.instance.currentKnife == this)
+        {
+            SpawnController.instance.currentKnife = null;
+        }
+    }
+
+    public void ThrowKnife()
+    {
+        knifeRigid.bodyType = RigidbodyType2D.Dynamic;
+        knifeRigid.velocity = Vector2.zero;
+        knifeRigid.AddForce(Vector2.down * 10f, ForceMode2D.Impulse);
+        knifeRigid.AddTorque(Random.Range(5f, 20f) * ((Random.Range(0, 2) % 2) == 0 ? 1 : -1), ForceMode2D.Impulse);
+    }
+
+    IEnumerator Failed()
+    {
+        yield return new WaitForSeconds(0.5f);
+
         if (TrunkController.instance != null)
         {
             TrunkController.instance.DestroyCurrentTrunk();
@@ -170,25 +222,6 @@ public class Knife : MonoBehaviour
         {
             GameController.instance.ResetScore();
             GameController.instance.ShowRestartScreen();
-        }
-
-        if (knifeRigid != null)
-        {
-            knifeRigid.bodyType = RigidbodyType2D.Dynamic;
-            knifeRigid.velocity = Vector2.zero;
-            knifeRigid.AddForce(Vector2.down * 500f, ForceMode2D.Impulse);
-        }
-
-        // Lets the failed knife fall briefly, but it cannot collide anymore.
-        Destroy(gameObject, 2f);
-    }
-
-    private void OnDestroy()
-    {
-        if (SpawnController.instance != null &&
-            SpawnController.instance.currentKnife == this)
-        {
-            SpawnController.instance.currentKnife = null;
         }
     }
 }

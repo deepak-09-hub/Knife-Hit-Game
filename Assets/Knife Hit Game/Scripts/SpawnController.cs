@@ -74,7 +74,7 @@ public class SpawnController : MonoBehaviour
         {
             return;
         }
-
+        SoundManager.Instance.PlaySFX("thorow");
         Knife knifeToThrow = currentKnife;
 
         // Clear this immediately because the knife is no longer waiting at spawn.

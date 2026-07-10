@@ -2,6 +2,8 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
+using Coffee.UIEffects;
 
 public class GameController : MonoBehaviour
 {
@@ -21,14 +23,21 @@ public class GameController : MonoBehaviour
 
     [Header("Game UI")]
     [SerializeField] private Button start;
+    [SerializeField] private Button exit;
     [SerializeField] private Button restart;
     [SerializeField] private Button home;
     [SerializeField] private Button knives;
     [SerializeField] private Button powerUps;
+    [SerializeField] private Button settigs;
+    [SerializeField] private Button sound;
+    [SerializeField] private Button music;
+    [SerializeField] public GameObject Menu;
+    [SerializeField] private GameObject volumebuttonMenu;
     [SerializeField] private GameObject spawnPoint;
     [SerializeField] private GameObject logo;
     [SerializeField] private GameObject gameOver;
     [SerializeField] private GameObject levelUp;
+    [SerializeField] private GameObject bossLevel;
     [SerializeField] private GameObject scoreObject;
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private GameObject hitsLeftObject;
@@ -85,10 +94,15 @@ public class GameController : MonoBehaviour
     private void Start()
     {
         start.onClick.AddListener(Play);
+        //logo.GetComponent<UIShiny>().Play();
         restart.onClick.AddListener(Restart);
         home.onClick.AddListener(Home);
         powerUps.onClick.AddListener(PowerUps);
         knives.onClick.AddListener(Knives);
+        exit.onClick.AddListener(Exit);
+        settigs.onClick.AddListener(settings);
+        sound.onClick.AddListener(Sound);
+        music.onClick.AddListener(Music);
 
         UpdateScoreText();
         UpdateAppleText();
@@ -113,19 +127,47 @@ public class GameController : MonoBehaviour
 
     public void Play()
     {
+        SoundManager.Instance.PlaySFX("play");
         logo.SetActive(false);
+        //logo.GetComponent<UIShiny>().Stop();
         start.gameObject.SetActive(false);
         knives.gameObject.SetActive(false);
         powerUps.gameObject.SetActive(false);
         scoreObject.SetActive(true);
         levelObject.SetActive(true);
         hitsLeftObject.SetActive(true);
+        exit.gameObject.SetActive(true);
         appleCountObject.SetActive(false);
+        Menu.SetActive(false);
+        if (volumebuttonMenu.activeSelf)
+        {
+            volumebuttonMenu.SetActive(false);
+        }
         StartNewRun();
+    }
+
+    private void Exit()
+    {
+        SoundManager.Instance.PlaySFX("button");
+        exit.gameObject.SetActive(false);
+        TrunkController.instance.DestroyCurrentTrunk();
+        SpawnController.instance.ClearKnives();
+        //logo.GetComponent<UIShiny>().Play();
+        logo.SetActive(true);
+        start.gameObject.SetActive(true);
+        knives.gameObject.SetActive(true);
+        powerUps.gameObject.SetActive(true);
+        scoreObject.SetActive(false);
+        levelObject.SetActive(false);
+        hitsLeftObject.SetActive(false);
+        appleCountObject.SetActive(true);
+        Menu.SetActive(true);
     }
 
     private void Restart()
     {
+        SoundManager.Instance.PlaySFX("button");
+        exit.gameObject.SetActive(true);
         gameOver.SetActive(false);
         restart.gameObject.SetActive(false);
         home.gameObject.SetActive(false);
@@ -133,11 +175,18 @@ public class GameController : MonoBehaviour
         levelObject.SetActive(true);
         hitsLeftObject.SetActive(true);
         appleCountObject.SetActive(false);
+        Menu.SetActive(false);
+        if(volumebuttonMenu.activeSelf)
+        {
+            volumebuttonMenu.SetActive(false);
+        }
         StartNewRun();
     }
 
     private void Home()
     {
+        SoundManager.Instance.PlaySFX("button");
+        //logo.GetComponent<UIShiny>().Play();
         logo.SetActive(true);
         gameOver.SetActive(false);
         restart.gameObject.SetActive(false);
@@ -148,16 +197,53 @@ public class GameController : MonoBehaviour
         scoreObject.SetActive(false);
         levelObject.SetActive(false);
         hitsLeftObject.SetActive(false);
+        exit.gameObject.SetActive(false);
         appleCountObject.SetActive(true);
+        Menu.SetActive(true);
+    }
+
+    private void settings()
+    {
+        SoundManager.Instance.PlaySFX("button");
+        if (volumebuttonMenu.activeSelf)
+        {
+            volumebuttonMenu.SetActive(false);
+            return;
+        }
+        volumebuttonMenu.SetActive(true);
+    }
+
+    private void Sound()
+    {
+        SoundManager.Instance.PlaySFX("button");
+        SoundManager.Instance.ToggleSound();
+    }
+
+    private void Music()
+    {
+        SoundManager.Instance.PlaySFX("button");
+        SoundManager.Instance.ToggleMusic();
     }
 
     private void PowerUps()
     {
+        SoundManager.Instance.PlaySFX("button");
+        Menu.SetActive(false);
+        if(volumebuttonMenu.activeSelf)
+        {
+            volumebuttonMenu.SetActive(false);
+        }
         PowerUpsMenuController.Instance.OpenPowerUpsMenu();
     }
 
     private void Knives()
     {
+        SoundManager.Instance.PlaySFX("button");
+        Menu.SetActive(false);
+        if (volumebuttonMenu.activeSelf)
+        {
+            volumebuttonMenu.SetActive(false);
+        }
         KnifeMenuControllor.Instance.OpenKnifeMenu();
     }
 
@@ -184,8 +270,10 @@ public class GameController : MonoBehaviour
 
     public void ShowRestartScreen()
     {
+        SoundManager.Instance.PlaySFX("lose");
         EndCurrentRun();
 
+        exit.gameObject.SetActive(false);
         gameOver.SetActive(true);
         restart.gameObject.SetActive(true);
         home.gameObject.SetActive(true);
@@ -450,20 +538,43 @@ public class GameController : MonoBehaviour
     private IEnumerator NextLevel()
     {
         bool bossWasDefeated = level > 0 && level % 4 == 0;
+        bool isBossLevel = (level + 1) > 0 && (level + 1) % 4 == 0;
+        hitsLeftText.gameObject.SetActive(false);
+
+
+        yield return new WaitForSeconds(1.7f);
 
         TrunkController.instance.DestroyCurrentTrunk();
 
-        levelUp.SetActive(true);
+        exit.gameObject.SetActive(false);
+        if (isBossLevel)
+        {
+            SoundManager.Instance.PlaySFX("bosslevel");
+            bossLevel.SetActive(true);
+        }
+        else
+        {
+            SoundManager.Instance.PlaySFX("levelup");
+            levelUp.SetActive(true);
+        }
         yield return new WaitForSeconds(1f);
-        levelUp.SetActive(false);
+        if (isBossLevel)
+        {
+            bossLevel.SetActive(false);
+        }
+        else
+        {
+            levelUp.SetActive(false);
+        }
+        exit.gameObject.SetActive(true);
 
         ClearActivePowerUp();
         appleMultiplier = 1;
 
-        if (bossWasDefeated)
-        {
-            PowerUpsMenuController.Instance.AwardRandomPowerUp();
-        }
+        //if (bossWasDefeated)
+        //{
+        //    PowerUpsMenuController.Instance.AwardRandomPowerUp();
+        //}
 
         level += 1;
         UpdateLevelText();
@@ -471,5 +582,6 @@ public class GameController : MonoBehaviour
         SpawnController.instance.ClearKnives();
         TrunkController.instance.spwanTrunk();
         SpawnController.instance.SpawnOnject();
+        hitsLeftText.gameObject.SetActive(true);
     }
 }

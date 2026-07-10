@@ -52,6 +52,8 @@ public class PowerUpsMenuController : MonoBehaviour
 
     public void ClosePowerUpsMenu()
     {
+        SoundManager.Instance.PlaySFX("button");
+        GameController.instance.Menu.SetActive(true);
         powerUpsMenu.SetActive(false);
     }
 

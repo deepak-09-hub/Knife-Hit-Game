@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Trunk : MonoBehaviour
@@ -80,6 +82,18 @@ public class Trunk : MonoBehaviour
     [Header("Horizontal Drift")]
     [SerializeField] private float horizontalDriftDistance = 1f;
     [SerializeField] private float horizontalDriftHalfCycleDuration = 1.25f;
+
+    [Header("References")]
+    public SpriteRenderer spriteRenderer;
+    public Sprite fiftyPercentSprite;
+    public Sprite twentyFivePercentSprite;
+    public List<Rigidbody2D> extraObjects = new List<Rigidbody2D>();
+    public GameObject destroyedObject;
+    public Vector2 destroyForceMiltiplier = new Vector2 (2f, 5f);
+    public string soundClipName;
+    [SerializeField] public string destroyClipName;
+
+    private Vector2 lastHitPoint;
 
     private float currentSpeed;
     private float speedMultiplier = 1f;
@@ -250,10 +264,12 @@ public class Trunk : MonoBehaviour
     public void TakeDamage(int damage)
     {
         currentHealth -= damage;
+        ChnageSpriteWithDamage(damage);
 
         if (currentHealth <= 0)
         {
             currentHealth = 0;
+            Die();
             return;
         }
 
@@ -263,6 +279,72 @@ public class Trunk : MonoBehaviour
         if (movementType == MovementType.HitReverse && damage > 0)
         {
             HandleHitReverse(damage);
+        }
+    }
+
+    private void Die()
+    {
+        if (destroyedObject != null)
+        {
+            if(destroyClipName!= "") SoundManager.Instance.PlaySFX(destroyClipName);
+            spriteRenderer.enabled = false;
+            destroyedObject.SetActive(true);
+
+            foreach(Rigidbody2D rb in destroyedObject.GetComponentsInChildren<Rigidbody2D>())
+            {
+                rb.transform.SetParent(null);
+                rb.velocity = Vector2.zero;
+                rb.AddForceAtPosition(new Vector2((rb.transform.position.x - lastHitPoint.x) * destroyForceMiltiplier.x, destroyForceMiltiplier.y), lastHitPoint, ForceMode2D.Impulse);
+                rb.AddTorque((rb.transform.position.x - lastHitPoint.x) * -100);
+                //rb.AddForceAtPosition(Random.insideUnitCircle * 20f, lastHitPoint, ForceMode2D.Impulse);
+                //rb.AddForce(Random.insideUnitCircle * 100f);
+                //rb.AddTorque(Random.Range(-200f, 200f));
+                Destroy(rb.gameObject, 5f);
+            }
+
+            foreach (Rigidbody2D rb in extraObjects)
+            {
+                if (rb != null)
+                {
+                    rb.transform.SetParent(null);
+                    rb.bodyType = RigidbodyType2D.Dynamic;
+                    rb.velocity = Vector2.zero;
+                    rb.AddForceAtPosition(new Vector2((rb.transform.position.x - lastHitPoint.x) * destroyForceMiltiplier.x, destroyForceMiltiplier.y), lastHitPoint, ForceMode2D.Impulse);
+                    rb.AddTorque((rb.transform.position.x - lastHitPoint.x) * -100);
+                    Destroy(rb.gameObject, 5f);
+                }
+            }
+        }
+    }
+
+    public void ChnageSpriteWithDamage(int damage)
+    {
+        if (spriteRenderer == null)
+        {
+            return;
+        }
+        int newHealth = Mathf.Max(0, currentHealth - damage);
+        float healthPercent = maxHealth > 0 ? (float)newHealth / maxHealth : 0f;
+        if (healthPercent == 0.5f)
+        {
+            spriteRenderer.sprite = fiftyPercentSprite;
+        }
+        else if (healthPercent < 0.25f)
+        {
+            spriteRenderer.sprite = twentyFivePercentSprite;
+        }
+    }
+
+    public void SetLastHitPoint(Vector2 hitPoint)
+    {
+        lastHitPoint = hitPoint;
+    }
+
+    public void AddToExtraObjects(Rigidbody2D rb)
+    {
+        if(!extraObjects.Contains(rb))
+        {
+            extraObjects.Add(rb);
         }
     }
 
