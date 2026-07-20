@@ -43,6 +43,20 @@ public class TrunkController : MonoBehaviour
 
         bool isBossLevel = GameController.instance != null && GameController.instance.level > 0 && GameController.instance.level % 4 == 0;
 
+        if(PowerUpsMenuController.Instance.superStrikeUnlocked && GameController.instance.ActivePowerUp == GameController.PowerUpType.None)
+        {
+            int randomChance = Random.Range(0, 100);
+            if (randomChance < 5)
+            {
+                GameController.instance.ActivePowerUp = GameController.PowerUpType.SuperStrike;
+                GameController.instance.ShowPowerUpAnimationAndWait();
+            }
+        }
+        else if(GameController.instance.ActivePowerUp == GameController.PowerUpType.SuperStrike)
+        {
+            GameController.instance.ActivePowerUp = GameController.PowerUpType.None;
+        }
+
         if (isBossLevel)
         {
             int bossIndex = Random.Range(0, bossTrunkPrefabs.Length);

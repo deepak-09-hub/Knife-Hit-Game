@@ -47,6 +47,7 @@ public class GameController : MonoBehaviour
     [SerializeField] private TMP_Text levelText;
     [SerializeField] private GameObject appleCountObject;
     [SerializeField] private TMP_Text appleCountText;
+    [SerializeField] private GameObject PowerUpAnimationParent;
 
     [Header("Assigned Power Up")]
     [Tooltip("Choose the ONE power-up the player receives for this run. The player cannot choose its type.")]
@@ -71,7 +72,7 @@ public class GameController : MonoBehaviour
 
     // This is the power-up currently waiting for its special event.
     // Example: Super Strike waits for the next trunk hit.
-    public PowerUpType ActivePowerUp { get; private set; } = PowerUpType.None;
+    public PowerUpType ActivePowerUp { get; set; } = PowerUpType.None;
 
     public GameObject SpawnPoint => spawnPoint;
     public int TotalApples => totalApples;
@@ -571,10 +572,10 @@ public class GameController : MonoBehaviour
         ClearActivePowerUp();
         appleMultiplier = 1;
 
-        //if (bossWasDefeated)
-        //{
-        //    PowerUpsMenuController.Instance.AwardRandomPowerUp();
-        //}
+        if (bossWasDefeated)
+        {
+            PowerUpsMenuController.Instance.AwardRandomPowerUp();
+        }
 
         level += 1;
         UpdateLevelText();
@@ -583,5 +584,20 @@ public class GameController : MonoBehaviour
         TrunkController.instance.spwanTrunk();
         SpawnController.instance.SpawnOnject();
         hitsLeftText.gameObject.SetActive(true);
+    }
+
+    public void ShowPowerUpAnimationAndWait()
+    {
+        StartCoroutine(ShowPowerUpAnimation());
+    }
+
+    private IEnumerator ShowPowerUpAnimation()
+    {
+        PowerUpAnimationParent.SetActive(true);
+        PowerUpAnimationParent.GetComponent<Animator>().SetBool("show", true);
+        yield return new WaitForSeconds(1.5f);
+        PowerUpAnimationParent.GetComponent<Animator>().SetBool("show", false);
+        PowerUpAnimationParent.SetActive(false);
+        PowerUpAnimationParent.transform.GetChild(0).gameObject.SetActive(true);
     }
 }

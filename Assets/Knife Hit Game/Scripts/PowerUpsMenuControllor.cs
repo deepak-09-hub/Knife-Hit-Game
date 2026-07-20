@@ -138,6 +138,6 @@ public class PowerUpsMenuController : MonoBehaviour
             "SuperStrike"
         };
         int randomIndex = Random.Range(0, powerUps.Length);
-        UnlockPowerUp(powerUps[randomIndex]);
+        UnlockPowerUp("SuperStrike");
     }
 }
