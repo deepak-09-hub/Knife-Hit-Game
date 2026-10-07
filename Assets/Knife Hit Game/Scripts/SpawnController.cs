@@ -23,11 +23,21 @@ public class SpawnController : MonoBehaviour
     {
         bool throwPressed = false;
 
-#if UNITY_EDITOR || UNITY_STANDALONE
-        throwPressed = Input.GetKeyDown(KeyCode.Space);
-#else
-    throwPressed = Input.touchCount > 0 &&
-                   Input.GetTouch(0).phase == TouchPhase.Began;
+#if UNITY_EDITOR || UNITY_STANDALONE || UNITY_WEBGL
+        // Space, left mouse click, or right mouse click
+        throwPressed =
+            Input.GetKeyDown(KeyCode.Space) ||
+            Input.GetMouseButtonDown(0) ||
+            Input.GetMouseButtonDown(1);
+#endif
+
+#if UNITY_ANDROID || UNITY_IOS
+    // Mobile touch
+    if (Input.touchCount > 0 &&
+        Input.GetTouch(0).phase == TouchPhase.Began)
+    {
+        throwPressed = true;
+    }
 #endif
 
         if (throwPressed &&
